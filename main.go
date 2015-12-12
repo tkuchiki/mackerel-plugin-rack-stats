@@ -131,7 +131,10 @@ func (u UnicornStatsPlugin) GraphDefinition() map[string](mp.Graphs) {
 			u.MetricKey = strings.Replace(strings.Replace(path, "/", "_", -1), ".", "_", -1)
 			label = fmt.Sprintf("Unicorn %s Stats", path)
 		}
+	} else {
+		label = fmt.Sprintf("Unicorn %s Stats", u.MetricKey)
 	}
+
 	return map[string](mp.Graphs){
 		fmt.Sprintf("%s.unicorn.stats", u.MetricKey): mp.Graphs{
 			Label: label,
@@ -150,8 +153,14 @@ func main() {
 	optAddress := flag.String("address", "http://localhost:8080", "URL or Unix Domain Socket")
 	optPath := flag.String("path", "/_raindrops", "Path")
 	optMetricKey := flag.String("metric-key", "", "Metric Key")
+	optVersion := flag.Bool("version", false, "Version")
 	optTempfile := flag.String("tempfile", "", "Temp file name")
 	flag.Parse()
+
+	if *optVersion {
+		fmt.Println("0.2")
+		os.Exit(0)
+	}
 
 	var unicorn UnicornStatsPlugin
 	unicorn.Address = *optAddress
@@ -162,7 +171,7 @@ func main() {
 	if *optTempfile != "" {
 		helper.Tempfile = *optTempfile
 	} else {
-		helper.Tempfile = fmt.Sprintf("/tmp/mackerel-plugin-nginx")
+		helper.Tempfile = fmt.Sprintf("/tmp/mackerel-plugin-unicorn-stats")
 	}
 
 	if os.Getenv("MACKEREL_AGENT_PLUGIN_META") != "" {
