@@ -87,19 +87,19 @@ func parseBodyUnix(path string) (stats map[string]interface{}, err error) {
 	return stats, err
 }
 
-type UnicornStatsPlugin struct {
+type RackStatsPlugin struct {
 	Address   string
 	Path      string
 	MetricKey string
 }
 
 // FetchMetrics interface for mackerelplugin
-func (u UnicornStatsPlugin) FetchMetrics() (stats map[string]interface{}, err error) {
+func (u RackStatsPlugin) FetchMetrics() (stats map[string]interface{}, err error) {
 	stats, err = u.parseStats()
 	return stats, err
 }
 
-func (u UnicornStatsPlugin) parseStats() (stats map[string]interface{}, err error) {
+func (u RackStatsPlugin) parseStats() (stats map[string]interface{}, err error) {
 	scheme, path, err := parseAddress(u.Address)
 
 	switch scheme {
@@ -114,7 +114,7 @@ func (u UnicornStatsPlugin) parseStats() (stats map[string]interface{}, err erro
 }
 
 // GraphDefinition interface for mackerelplugin
-func (u UnicornStatsPlugin) GraphDefinition() map[string](mp.Graphs) {
+func (u RackStatsPlugin) GraphDefinition() map[string](mp.Graphs) {
 	scheme, path, err := parseAddress(u.Address)
 	if err != nil {
 		log.Fatal(err)
@@ -126,17 +126,17 @@ func (u UnicornStatsPlugin) GraphDefinition() map[string](mp.Graphs) {
 		case "http":
 			_, port, _ := net.SplitHostPort(path)
 			u.MetricKey = port
-			label = fmt.Sprintf("Unicorn Port %s Stats", port)
+			label = fmt.Sprintf("Rack Port %s Stats", port)
 		case "unix":
 			u.MetricKey = strings.Replace(strings.Replace(path, "/", "_", -1), ".", "_", -1)
-			label = fmt.Sprintf("Unicorn %s Stats", path)
+			label = fmt.Sprintf("Rack %s Stats", path)
 		}
 	} else {
-		label = fmt.Sprintf("Unicorn %s Stats", u.MetricKey)
+		label = fmt.Sprintf("Rack %s Stats", u.MetricKey)
 	}
 
 	return map[string](mp.Graphs){
-		fmt.Sprintf("%s.unicorn.stats", u.MetricKey): mp.Graphs{
+		fmt.Sprintf("%s.rack.stats", u.MetricKey): mp.Graphs{
 			Label: label,
 			Unit:  "integer",
 			Metrics: [](mp.Metrics){
@@ -162,16 +162,16 @@ func main() {
 		os.Exit(0)
 	}
 
-	var unicorn UnicornStatsPlugin
-	unicorn.Address = *optAddress
-	unicorn.Path = *optPath
-	unicorn.MetricKey = *optMetricKey
+	var rack RackStatsPlugin
+	rack.Address = *optAddress
+	rack.Path = *optPath
+	rack.MetricKey = *optMetricKey
 
-	helper := mp.NewMackerelPlugin(unicorn)
+	helper := mp.NewMackerelPlugin(rack)
 	if *optTempfile != "" {
 		helper.Tempfile = *optTempfile
 	} else {
-		helper.Tempfile = fmt.Sprintf("/tmp/mackerel-plugin-unicorn-stats")
+		helper.Tempfile = fmt.Sprintf("/tmp/mackerel-plugin-rack-stats")
 	}
 
 	if os.Getenv("MACKEREL_AGENT_PLUGIN_META") != "" {
