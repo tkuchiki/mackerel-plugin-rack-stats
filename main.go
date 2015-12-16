@@ -18,10 +18,10 @@ import (
 
 var sock string
 
-func parseAddress(uri string) (scheme, path string, err error) {
+func parseAddress(uri string) (scheme, path, port string, err error) {
 	u, err := url.Parse(uri)
 	if err != nil {
-		return scheme, path, err
+		return scheme, path, port, err
 	}
 
 	scheme = u.Scheme
@@ -30,10 +30,17 @@ func parseAddress(uri string) (scheme, path string, err error) {
 		path = u.Host
 	}
 
-	return scheme, path, err
+	host := strings.Split(u.Host, ":")
+	if len(host) == 1 {
+		port = "80"
+	} else {
+		port = host[1]
+	}
+
+	return scheme, path, port, err
 }
 
-func parseBody(r io.Reader) (stats map[string]interface{}, err error) {
+func parseBody(r io.Reader, index string) (stats map[string]interface{}, err error) {
 	scanner := bufio.NewScanner(r)
 	stats = make(map[string]interface{})
 	for scanner.Scan() {
@@ -41,14 +48,19 @@ func parseBody(r io.Reader) (stats map[string]interface{}, err error) {
 		if len(p) == 2 {
 			stats[strings.Trim(p[0], ":")], err = strconv.ParseFloat(p[1], 64)
 		} else {
-			stats[strings.Trim(p[len(p)-2], ":")], err = strconv.ParseFloat(p[len(p)-1], 64)
+			if strings.Index(p[0], index) > -1 {
+				fmt.Println(p[0])
+				fmt.Println(index)
+				stats[strings.Trim(p[len(p)-2], ":")], err = strconv.ParseFloat(p[len(p)-1], 64)
+			}
 		}
 	}
+	stats["active"] = stats["active"].(float64) - 1
 
 	return stats, err
 }
 
-func parseBodyHttp(uri string) (stats map[string]interface{}, err error) {
+func parseBodyHttp(uri, port string) (stats map[string]interface{}, err error) {
 	var req *http.Request
 	req, err = http.NewRequest("GET", uri, nil)
 	if err != nil {
@@ -60,7 +72,7 @@ func parseBodyHttp(uri string) (stats map[string]interface{}, err error) {
 	}
 	defer resp.Body.Close()
 
-	stats, err = parseBody(resp.Body)
+	stats, err = parseBody(resp.Body, ":"+port)
 
 	return stats, err
 }
@@ -82,7 +94,7 @@ func parseBodyUnix(path string) (stats map[string]interface{}, err error) {
 	}
 	defer resp.Body.Close()
 
-	stats, err = parseBody(resp.Body)
+	stats, err = parseBody(resp.Body, sock)
 
 	return stats, err
 }
@@ -100,11 +112,11 @@ func (u RackStatsPlugin) FetchMetrics() (stats map[string]interface{}, err error
 }
 
 func (u RackStatsPlugin) parseStats() (stats map[string]interface{}, err error) {
-	scheme, path, err := parseAddress(u.Address)
+	scheme, path, port, err := parseAddress(u.Address)
 
 	switch scheme {
 	case "http":
-		stats, err = parseBodyHttp(fmt.Sprintf("%s/%s", u.Address, strings.TrimLeft(u.Path, "/")))
+		stats, err = parseBodyHttp(fmt.Sprintf("%s/%s", u.Address, strings.TrimLeft(u.Path, "/")), port)
 	case "unix":
 		sock = path
 		stats, err = parseBodyUnix(u.Path)
@@ -115,7 +127,7 @@ func (u RackStatsPlugin) parseStats() (stats map[string]interface{}, err error) 
 
 // GraphDefinition interface for mackerelplugin
 func (u RackStatsPlugin) GraphDefinition() map[string](mp.Graphs) {
-	scheme, path, err := parseAddress(u.Address)
+	scheme, path, port, err := parseAddress(u.Address)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -124,7 +136,6 @@ func (u RackStatsPlugin) GraphDefinition() map[string](mp.Graphs) {
 	if u.MetricKey == "" {
 		switch scheme {
 		case "http":
-			_, port, _ := net.SplitHostPort(path)
 			u.MetricKey = port
 			label = fmt.Sprintf("Rack Port %s Stats", port)
 		case "unix":
@@ -158,7 +169,7 @@ func main() {
 	flag.Parse()
 
 	if *optVersion {
-		fmt.Println("0.2")
+		fmt.Println("0.3")
 		os.Exit(0)
 	}
 
