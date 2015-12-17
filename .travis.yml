@@ -12,3 +12,7 @@ go:
   - 1.5.1
   - tip
 sodo: false
+install:
+  - go get github.com/golang/lint/golint
+script:
+  - golint ./...
