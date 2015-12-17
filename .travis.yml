@@ -15,4 +15,5 @@ sodo: false
 install:
   - go get github.com/golang/lint/golint
 script:
-  - golint ./...
+  - golint ./... | tee .golint.txt
+  - test ! -s .golint.txt
