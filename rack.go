@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -48,7 +49,8 @@ func parseBody(r io.Reader, index string) (stats map[string]interface{}, err err
 		if len(p) == 2 {
 			stats[strings.Trim(p[0], ":")], err = strconv.ParseFloat(p[1], 64)
 		} else {
-			if strings.Index(p[0], index) > -1 {
+			re := regexp.MustCompile(fmt.Sprintf("%s$", index))
+			if ok := re.Match([]byte(p[0])); ok && err == nil {
 				stats[strings.Trim(p[len(p)-2], ":")], err = strconv.ParseFloat(p[len(p)-1], 64)
 			}
 		}
