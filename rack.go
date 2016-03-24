@@ -148,7 +148,7 @@ func (u RackStatsPlugin) GraphDefinition() map[string](mp.Graphs) {
 	}
 
 	return map[string](mp.Graphs){
-		fmt.Sprintf("%s.rack.stats", u.MetricKey): mp.Graphs{
+		fmt.Sprintf("rack.%s.stats", u.MetricKey): mp.Graphs{
 			Label: label,
 			Unit:  "integer",
 			Metrics: [](mp.Metrics){
