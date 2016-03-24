@@ -164,7 +164,7 @@ func (u RackStatsPlugin) GraphDefinition() map[string](mp.Graphs) {
 func main() {
 	optAddress := flag.String("address", "http://localhost:8080", "URL or Unix Domain Socket")
 	optPath := flag.String("path", "/_raindrops", "Path")
-	optMetricKey := flag.String("metric-key", "", "Metric Key")
+	optMetricKey := flag.String("metric-key-prefix", "", "Metric Key Prefix")
 	optVersion := flag.Bool("version", false, "Version")
 	optTempfile := flag.String("tempfile", "", "Temp file name")
 	flag.Parse()
