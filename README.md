@@ -1,4 +1,7 @@
 # mackerel-plugin-rack-stats
+
+[![Build Status](https://travis-ci.org/tkuchiki/mackerel-plugin-rack-stats.svg?branch=master)](https://travis-ci.org/tkuchiki/mackerel-plugin-rack-stats)
+
 Rack servers metrics plugin for mackerel.io agent.  
 Only work on Linux.  
 Inspired by [mackerel-plugin-nginx](https://github.com/mackerelio/mackerel-agent-plugins/tree/master/mackerel-plugin-nginx).
